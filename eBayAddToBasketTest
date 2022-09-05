@@ -1,0 +1,127 @@
+package TestingTask;
+
+import java.time.Duration;
+import java.util.ArrayList;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Wait;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+public class eBayTest {
+	WebDriver driver;
+	WebDriverWait wait;
+	Wait<WebDriver> fluentWait;
+	Actions action;
+	
+	public void InitializeBrowser()
+	{
+		// Setup chrome driver
+		System.setProperty("webdriver.chrome.driver", ".\\drivers\\chromedriver.exe");
+		WebDriver driver = new ChromeDriver();
+				
+		wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+		action = new Actions(driver);
+
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(10));
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+		driver.manage().window().maximize();
+				
+		// Navigate to web site
+		driver.get("https://www.ebay.com/");
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(10));
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+		driver.manage().window().maximize();
+		System.out.println(driver.getTitle());
+	}
+	
+	public void SearchCategory(String SearchWord)
+	{
+		wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("gh-ac")));
+		driver.findElement(By.id("gh-ac")).sendKeys(SearchWord);
+		driver.findElement(By.id("gh-btn")).click();
+	}
+	
+	public void FilterByOptionIndex(String Option)
+	{
+		driver.findElement(By.cssSelector("span[id='nid-ods-1'] button[class*='expand'][class*='btn'][class*='menu']")).click();
+		wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("nid-ods-1-content")));
+		driver.findElement(By.xpath("(//span[@id='nid-ods-1-content']/ul[contains(@class,'items')]/li)[5](//span[@id='nid-ods-1-content']/ul[contains(@class,'items')]/li)["+Option+"]")).click();
+	}
+	
+	public void AddItemsToCart()
+	{
+		for (int i = 1; i < 3; i++) {
+			
+			//Open most expensive product
+			wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//ul[contains(@class,'results')]//div[contains(@class,'image') and contains(@class,'section')])["+i+"]"))).click();
+			
+			//New tab in browser is opened, we have to switch to new one and click add to basket
+			ArrayList<String> tabs = new ArrayList<String>(driver.getWindowHandles());
+			driver.switchTo().window(tabs.get(1));
+			wait.until(ExpectedConditions.elementToBeClickable(By.id("isCartBtn_btn"))).click();
+			
+			//Close opened tab and switch back to original one
+			driver.close();
+			driver.switchTo().window(tabs.get(0));
+		}
+	}
+	
+	public void CheckItemsInBasket()
+	{
+		// Navigate to basket
+		wait.until(ExpectedConditions.elementToBeClickable(By.id("gh-minicart-hover"))).click();
+		wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("app-cart")));
+		
+		// Check items quantity
+		Assert.assertEquals("2", driver.findElement(By.id("gh-cart-n")).getText(), "Basket itemas are not equals 2");
+	}
+		
+	@Test
+	public void eBayAddItemToBasketTest()
+	{
+		// Initialize browser and Navigate to web side
+		InitializeBrowser();
+		
+		// Search for some category and see search result page
+		SearchCategory("iPhone");
+		wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("srp-river-main")));
+		
+		// Filter by price
+		FilterByOptionIndex("5");
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(10));
+		
+		// Save price on the search result page for two most expensive items
+		ArrayList<String> itemsSearchResultPage = new ArrayList<String>();
+		
+		for(int i = 1; i < 3; i++)
+		{
+			var itemsSearchResult = driver.findElement(By.xpath("(//ul[contains(@class,'result') and contains(@class,'list')]//div[contains(@class,'details')]//span[contains(@class,'price')])["+i+"]")).getText();
+			itemsSearchResultPage.add(itemsSearchResult);
+		}
+		
+		// Add items to cart
+		AddItemsToCart();
+		
+		//Navigate to Basket
+		CheckItemsInBasket();
+		
+		// Save prices from Basket and compare prices from search result list and in the basket
+		ArrayList<String> itemsBasket = new ArrayList<String>();
+		
+		for(int i = 1; i < 3; i++)
+		{
+			var itemsInCart = driver.findElement(By.xpath("((//*[contains(@class,'price') and contains(@class,'details')]/*[contains(@class,'item')])["+i+"]//span[contains(@text,'')])[3]")).getText();
+			itemsBasket.add(itemsInCart);
+		}
+		
+		Assert.assertEquals(itemsSearchResultPage.get(1), itemsBasket.get(1), "The Prices of item 1 are not equals");
+		Assert.assertEquals(itemsSearchResultPage.get(2), itemsBasket.get(2), "The Prices of item 2 are not equals");
+	}
+
+}
