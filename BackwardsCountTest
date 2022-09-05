@@ -1,0 +1,30 @@
+package TestingTask;
+
+public class BackwordsCountTest {
+
+	public static void main(String[] args) {
+
+		for(int i = 100; i>0; i--)
+		{
+			if(i % 5 == 0)
+			{
+				System.out.print("\n Agile");
+			}
+			else if (i % 3 == 0)
+			{
+				System.out.print("\n Software");
+			}
+			else if (i % 3 == 0 & i % 5 == 0)
+			{
+				System.out.print("\n Testing");
+			}
+			else
+			{
+				System.out.print("\n Number:" + i);
+			}
+			
+		}
+
+	}
+
+}
