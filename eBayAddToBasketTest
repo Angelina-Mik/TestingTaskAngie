@@ -122,6 +122,10 @@ public class eBayTest {
 		
 		Assert.assertEquals(itemsSearchResultPage.get(1), itemsBasket.get(1), "The Prices of item 1 are not equals");
 		Assert.assertEquals(itemsSearchResultPage.get(2), itemsBasket.get(2), "The Prices of item 2 are not equals");
+		
+		// Close browser and end the session
+		driver.close();
+		driver.quit();
 	}
 
 }
